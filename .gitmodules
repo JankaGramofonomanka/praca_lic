@@ -1,0 +1,3 @@
+[submodule "numbering_patterns"]
+	path = numbering_patterns
+	url = https://github.com/JankaGramofonomanka/numbering_patterns.git
