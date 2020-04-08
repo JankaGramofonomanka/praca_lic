@@ -1,4 +1,5 @@
-from numbering_patterns.numbering_patterns.source.linear_formula import LinearFormula
+from numbering_patterns.numbering_patterns.source.linear_formula import \
+    LinearFormula
 
 def get_common_edge(seq_1, seq_2, len_1, len_2):
 

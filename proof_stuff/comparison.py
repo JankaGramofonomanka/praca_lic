@@ -1,4 +1,5 @@
-from numbering_patterns.numbering_patterns.source.linear_relation import LinearRelation
+from numbering_patterns.numbering_patterns.source.linear_relation import \
+    LinearRelation
 
 from proof_stuff.encryption_decryption import get_data
 from proof_stuff.misc import get_formula_with_index
