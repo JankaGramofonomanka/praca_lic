@@ -18,9 +18,9 @@ class TestStuff(unittest.TestCase):
         left = NTermRecursionSequence('i', '2i', '3i')
         right = NTermRecursionSequence('6i+4', '5i', '4i')
         upper = CentralVertexNumbering(
-            1, left, right, left_len='ull', right_len='url')
+            1, left, right, left_len='3ull', right_len='3url')
         lower = CentralVertexNumbering(
-            1, left, right, left_len='lll', right_len='lrl')
+            1, left, right, left_len='3lll', right_len='3lrl')
 
         case = {
             'n': '6k+4',
@@ -30,51 +30,34 @@ class TestStuff(unittest.TestCase):
         }
 
         # vertices
-        info = get_data('vul0', case)
+        info = get_data('vul0', case, 'k')
         self.assertEqual(info['formula'], LinearFormula('1i'))
-        self.assertEqual(info['index'], LinearFormula('3i+1'))
-        self.assertEqual(info['index bound'], LinearFormula('ull'))
-        self.assertEqual(
-            list(info.keys()), ['formula', 'index', 'index bound'])
 
-        info = get_data('vucc', case)
+        info = get_data('vucc', case, 'k')
         self.assertEqual(info['formula'], LinearFormula(1))
-        self.assertEqual(list(info.keys()), ['formula'])
 
-        info = get_data('vur1', case)
+        info = get_data('vur1', case, 'k')
         self.assertEqual(info['formula'], LinearFormula('5i'))
-        self.assertEqual(info['index'], LinearFormula('3i+2'))
-        self.assertEqual(info['index bound'], LinearFormula('url'))
 
-        info = get_data('vlr2', case)
+        info = get_data('vlr2', case, 'k')
         self.assertEqual(info['formula'], LinearFormula('4i'))
-        self.assertEqual(info['index'], LinearFormula('3i+3'))
-        self.assertEqual(info['index bound'], LinearFormula('lrl'))
 
         # edges
-        info = get_data('eul0', case)
+        info = get_data('eul0', case, 'k')
         self.assertEqual(info['formula'], LinearFormula('3i'))
-        self.assertEqual(info['index'], LinearFormula('3i+1'))
-        self.assertEqual(info['index bound'], LinearFormula('ull - 1'))
-        self.assertEqual(
-            list(info.keys()), ['formula', 'index', 'index bound'])
 
-        info = get_data('eul1', case)
+        info = get_data('eul1', case, 'k')
         self.assertEqual(info['formula'], LinearFormula('5i'))
-        self.assertEqual(info['index'], LinearFormula('3i+2'))
 
-        info = get_data('eul2', case)
+        info = get_data('eul2', case, 'k')
         self.assertEqual(info['formula'], LinearFormula('4i+1'))
-        self.assertEqual(info['index'], LinearFormula('3i+3'))
 
 
-        info = get_data('eucl', case)
+        info = get_data('eucl', case, 'k')
         self.assertEqual(info['formula'], LinearFormula(1))
-        self.assertEqual(list(info.keys()), ['formula'])
 
-        info = get_data('eucr', case)
+        info = get_data('eucr', case, 'k')
         self.assertEqual(info['formula'], LinearFormula(5))
-        self.assertEqual(list(info.keys()), ['formula'])
 
         # middle edges
         upper.set_lengths('3k + 3', '3k + 5', inplace=True)
@@ -83,13 +66,11 @@ class TestStuff(unittest.TestCase):
         case['upper'] = upper
         case['lower'] = lower
 
-        info = get_data('emll', case)
+        info = get_data('emll', case, 'k')
         self.assertEqual(info['formula'], LinearFormula('4k+1'))
-        self.assertEqual(list(info.keys()), ['formula'])
 
-        info = get_data('emrr', case)
+        info = get_data('emrr', case, 'k')
         self.assertEqual(info['formula'], LinearFormula('10k+5'))
-        self.assertEqual(list(info.keys()), ['formula'])
 
     def test_rsv(self):
 

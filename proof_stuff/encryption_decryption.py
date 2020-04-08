@@ -4,6 +4,7 @@ from numbering_patterns.numbering_patterns.source.linear_relation import \
     LinearRelation
 from proof_stuff.misc import get_common_edge
 
+
 def get_names(case):
 
     names = []
@@ -38,7 +39,21 @@ def get_names(case):
 
     return names
 
-def get_data(name, case, ntuple_index='i', k='k'):
+def get_data(name, case, k_form, ntuple_index='i'):
+
+    # "terminology":
+    # vertex:  center  |v_1 v_2 ... v_n|v_n+1   v_n+2   ... v_2n|   ...
+    # index:        0  |1   2   ... n  |n+1     n+2     ... 2n  |   ...
+    # ntuple_index     |0   0   ... 0  |1       1       ... 1   |   ...
+    # formula_index    |0   1   ... n-1|0       1       ... n-1 |   ...
+
+    # in other words:
+    # index == the index of a vertex,
+    #   where the 0-th vertex is the central vertex
+    # formula_index == (index - 1) % n
+    # ntuple_index == (index - 1) // 3
+
+    result = {'name': name, 'ntuple_index': ntuple_index, 'k_form': k_form}
 
     if name[1] == 'm':
         # this means we want one of the edges between the upper and lower
@@ -48,30 +63,29 @@ def get_data(name, case, ntuple_index='i', k='k'):
         if name[2] == 'r':
             # we want the right middle edge
             formula = get_common_edge(
-                seq_1=upper_pattern.right_seq.substitute(k=k),
-                seq_2=lower_pattern.right_seq.substitute(k=k),
-                len_1=upper_pattern.right_len.substitute(k=k),
-                len_2=lower_pattern.right_len.substitute(k=k),
+                seq_1=upper_pattern.right_seq.substitute(k=k_form),
+                seq_2=lower_pattern.right_seq.substitute(k=k_form),
             )
 
         elif name[2] == 'l':
             # we want the left middle edge
             formula = get_common_edge(
-                seq_1=upper_pattern.left_seq.substitute(k=k),
-                seq_2=lower_pattern.left_seq.substitute(k=k),
-                len_1=upper_pattern.left_len.substitute(k=k),
-                len_2=lower_pattern.left_len.substitute(k=k),
+                seq_1=upper_pattern.left_seq.substitute(k=k_form),
+                seq_2=lower_pattern.left_seq.substitute(k=k_form),
             )
 
-        return {'formula': formula.zip()}
+        result['formula'] = formula.zip()
+        return result
 
-    elif name[1] == 'u':
+    if name[1] == 'u':
         # we want a formula form the upper pattern
-        pattern = case['upper'].substitute(n=case['n'])
+        pattern = case['upper'].copy()
     elif name[1] == 'l':
         # we want a formula form the lower pattern
-        pattern = case['lower'].substitute(n=case['n'])
+        pattern = case['lower'].copy()
 
+    pattern.substitute(n=case['n'], inplace=True)
+    pattern.substitute(k=k_form, inplace=True)
 
     if name[2] == 'c':
         # we want the central vertex or one of the edges coming from the
@@ -83,65 +97,61 @@ def get_data(name, case, ntuple_index='i', k='k'):
             # we want one of the central edges
             if name[3] == 'l':
                 # we want the center left edge
-                formula = pattern.center + pattern.evaluate(-1)
+                formula = pattern.get_edge('left', 'center')
             elif name[3] == 'r':
                 # we want the center right edge
-                formula = pattern.center + pattern.evaluate(1)
+                formula = pattern.get_edge('right', 'center')
 
-        return {'formula': formula.substitute(k=k).zip()}
+        result['formula'] = formula.zip()
+
     else:
         if name[2] == 'l':
             # we want one of the formulas from the left sequence
             seq = pattern.left_seq
-            bound = pattern.left_len.copy()
+
         elif name[2] == 'r':
             # we want one of the formulas from the right sequence
             seq = pattern.right_seq
-            bound = pattern.right_len.copy()
 
-        j = int(name[3])
-        if name[0] == 'v':
-            # we want the <j>-th formula from te sequence
-            formula = seq.formulas[j].copy()
-        elif name[0] == 'e':
-            # we want the formula assigned to the edge between the
-            # (k*n + <j>)-th and the (k*n + <j> + 1)-th vertices of the
-            # sequence
-            this_vertex_number = seq.formulas[j]
-            if j < seq.n - 1:
-                next_vartex_number = seq.formulas[j + 1]
-            else:
-                # the <ntuple_index> variable in the next ntuple is
-                # incremented
-                next_vartex_number = seq.formulas[0].substitute(
-                    **{seq.ntuple_index: LinearFormula(seq.ntuple_index) + 1})
+        last_formula_index_mod_n = (seq.get_length_mod_n() - 1) % seq.n
+        formula_index = int(name[3])
 
-            # the next index is less than <bound> and
-            # 'next index' == 'index' + 1 so 'index' <= <bound> - 1
+        # prepare the bound of <ntuple_index>
+
+        bound = seq.get_ntuple_index_bound(no_formula=formula_index)
+        if name[0] == 'e' and formula_index == last_formula_index_mod_n:
+            # that means there is a formula with the 'ntuple index'
+            # incremented, so the bound can be decremented
             bound -= 1
 
-            formula = this_vertex_number + next_vartex_number
+        # prepare the formula
+        if name[0] == 'v':
+            # we want the <formula_index>-th formula from te sequence
+            formula = seq.formulas[formula_index].copy()
 
+        elif name[0] == 'e':
+            # we want the formula assigned to the edge between the
+            # (k*n + <formula_index>)-th and the
+            # (k*n + <formula_index> + 1)-th vertices of the sequence
+
+            formula = seq.get_edge(formula_index)
 
         formula.substitute(
             **{seq.ntuple_index: ntuple_index}, inplace=True)
 
-        index = seq.n*LinearFormula(ntuple_index) + j + 1
+        result['formula'] = formula.zip()
+        result['bound'] = bound.zip()
 
-    return {
-        'formula': formula.substitute(k=k).zip(),
-        'index': index.substitute(k=k).zip(),
-        'index bound': bound.substitute(k=k).zip()
-    }
+    return result
 
 
 def print_equation(name_1, name_2, case, no_spaces=0):
 
-    if name_1[1] == 'm' or name_2[1] == 'm':
+    if 1 == 1:
         for i in range(len(case['k_forms'])):
             k_form = case['k_forms'][i]
-            info_1 = get_data(name_1, case, ntuple_index='p', k=k_form)
-            info_2 = get_data(name_2, case, ntuple_index='p', k=k_form)
+            info_1 = get_data(name_1, case, ntuple_index='p', k_form=k_form)
+            info_2 = get_data(name_2, case, ntuple_index='q', k_form=k_form)
             formula_1 = info_1['formula']
             formula_2 = info_2['formula']
 
@@ -152,10 +162,5 @@ def print_equation(name_1, name_2, case, no_spaces=0):
             else:
                 print(f"{no_spaces*' '}or {equation}")
 
-    else:
-        formula_1 = get_data(name_1, case, ntuple_index='p')['formula']
-        formula_2 = get_data(name_2, case, ntuple_index='p')['formula']
-        equation = LinearRelation(formula_1, formula_2, relation='==')
 
-        print(f"{no_spaces*' '}{equation}")
 

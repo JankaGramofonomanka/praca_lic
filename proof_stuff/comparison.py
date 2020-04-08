@@ -1,59 +1,85 @@
+
 from numbering_patterns.numbering_patterns.source.linear_relation import \
     LinearRelation
 
 from proof_stuff.encryption_decryption import get_data
-from proof_stuff.misc import get_formula_with_index
+from proof_stuff.validator import Validator, validate
+
+def equation_true(equation):
+    """Says if <equation> is true"""
+    return equation.status()
+
+def equivalent_to_the_same_vertex_or_edge(info_1, info_2):
+    """Returns 'true' if the equation is equivalent to the fact that the
+    formulas in question are assigned to the same vertex / edge"""
+
+    if info_1['name'] != info_2['name']:
+        # the vertices / edges cannot be the same if the names are not the
+        # same
+        return 'false'
+
+    try:
+        # if the 3-rd (counting from 0) character of the name is a number,
+        # that means we are dealing with a formula from a recursive sequence,
+        # so the formulas may be the same but they can refer to different
+        # edges / vertices
+        int(info_1['name'][3])
+
+    except ValueError:
+        # the names are the same and they don't refer to formulas from any of
+        # the recursive sequences, therefore they appear only once in the
+        # pattern
+        return 'true'
+
+    equation_1 = LinearRelation(
+        info_1['formula'], info_2['formula'], relation='==')
+    equation_2 = LinearRelation(
+        info_1['ntuple_index'], info_2['ntuple_index'], relation='==')
+
+    if equation_1.equivalent(equation_2):
+        return 'true'
+    else:
+        return 'false'
 
 
-def basic_solution(equation):
+def bounds_dont_contradict(info_1, info_2):
+    """Says if the thesis contradicts the bounds of the variables"""
 
-    # simple comparison
-    status = equation.status()
-    if status != 'unknown':
-        # <status> == 'false' ==> we've got what we want
-        # <status> == 'true' ==> the theorem is false or formulas are the same
-        return status
+    formula_1 = info_1['formula']
+    formula_2 = info_2['formula']
+    ntuple_index_1 = info_1['ntuple_index']
+    ntuple_index_2 = info_2['ntuple_index']
 
-    # comparison modulo
-    for m in [2, 3]:
-        status = equation.modulo(m).status()
-        if status == 'false':
-            # <status> == 'true' doesn't tell us anything, 'unknown' also
-            return status
-
-    return 'unknown'
-
-
-def check_inequalities(info_1, info_2, n='n', fund_var='k'):
-
-    formula_1 = info_1['formula'].substitute(n=n)
-    formula_2 = info_2['formula'].substitute(n=n)
-
-    # use the fact that 1 <= 'index' <= 'length' -----------------------------
-
-    # set up kwargs
+    # set up kwargs ----------------------------------------------------------
     upper_bounds = {}
     lower_bounds = {}
-    if 'index' in info_1.keys():
-        formula_1 = get_formula_with_index(
-            formula_1, info_1['index'], 'index_1')
-        upper_bounds['index_1'] = info_1['index bound']
-        lower_bounds['index_1'] = 1
+    if 'bound' in info_1.keys():
+        upper_bounds[ntuple_index_1] = info_1['bound']
+        lower_bounds[ntuple_index_1] = 0
 
-    if 'index' in info_2.keys():
-        formula_2 = get_formula_with_index(
-            formula_2, info_2['index'], 'index_2')
-        upper_bounds['index_2'] = info_2['index bound']
-        lower_bounds['index_2'] = 1
+    if 'bound' in info_2.keys():
+        upper_bounds[ntuple_index_2] = info_2['bound']
+        lower_bounds[ntuple_index_2] = 0
 
-    # solve the equation
+    # solve the equation -----------------------------------------------------
     equation = LinearRelation(formula_1, formula_2, relation='==').solve()
     zero = equation.left
 
-    # find the bounds
+    # find the bounds --------------------------------------------------------
     less_than_zero, more_than_zero = zero.get_bounds(
         lower_bounds=lower_bounds, upper_bounds=upper_bounds)
 
+    rel_1 = LinearRelation(less_than_zero, zero, relation='<=')
+    rel_2 = LinearRelation(more_than_zero, zero, relation='>=')
+
+    if rel_1.status() == 'false' or rel_2.status() == 'false':
+        # 'status' == 'true' doesn't tell us anything, 'unknown' also
+        return 'false'
+
+    # use the fact that 't' >= 0 ---------------------------------------------
+    less_than_zero, _ = less_than_zero.get_bounds(lower_bounds={'t': 2})
+    _, more_than_zero = more_than_zero.get_bounds(lower_bounds={'t': 2})
+
     rel_1 = LinearRelation(less_than_zero, 0, relation='<=')
     rel_2 = LinearRelation(more_than_zero, 0, relation='>=')
 
@@ -61,20 +87,14 @@ def check_inequalities(info_1, info_2, n='n', fund_var='k'):
         # 'status' == 'true' doesn't tell us anything, 'unknown' also
         return 'false'
 
-    # use the fact that <fund_var> >= 0 --------------------------------------
-    less_than_zero, _ = less_than_zero.get_bounds(lower_bounds={fund_var: 0})
-    _, more_than_zero = more_than_zero.get_bounds(lower_bounds={fund_var: 0})
-
-    rel_1 = LinearRelation(less_than_zero, 0, relation='<=')
-    rel_2 = LinearRelation(more_than_zero, 0, relation='>=')
-
-    if rel_1.status() == 'false' or rel_2.status() == 'false':
-        # 'status' == 'true' doesn't tell us anything, 'unknown' also
-        return 'false'
-
-    print(equation)
-    print(rel_1.solve())
-    print(rel_2.solve())
+    print(f"{info_1['name']} == {info_2['name']} <==> {equation}")
+    print(f"==> {rel_1.solve()}")
+    print(f"and {rel_2.solve()}")
+    if 'bound' in info_1.keys():
+        print(f"{info_1['ntuple_index']} <= {info_1['bound']}")
+    if 'bound' in info_2.keys():
+        print(f"{info_2['ntuple_index']} <= {info_2['bound']}")
+    print(f"k == {info_1['k_form']}")
     print()
 
     # if all code above fails, return the default ----------------------------
@@ -83,96 +103,45 @@ def check_inequalities(info_1, info_2, n='n', fund_var='k'):
 
 def compare(name_1, name_2, case):
 
-    if name_1[:2] != 'em' and name_2[:2] != 'em':
+    results = []
+    for k_form in case['k_forms']:
 
-        info_1 = get_data(name_1, case, ntuple_index='p')
-        info_2 = get_data(name_2, case, ntuple_index='q')
+        # set up data --------------------------------------------------------
+        info_1 = get_data(name_1, case, k_form, ntuple_index='p')
+        info_2 = get_data(name_2, case, k_form, ntuple_index='q')
 
-        formula_1 = info_1['formula'].substitute()
-        formula_2 = info_2['formula'].substitute()
+        formula_1 = info_1['formula']
+        formula_2 = info_2['formula']
 
         equation = LinearRelation(formula_1, formula_2, relation='==')
         equation.solve(inplace=True)
 
-        if name_1 == name_2 and equation.equivalent('p == q'):
-            return 'false'
+        # set up validators --------------------------------------------------
+        the_same_number = Validator('contradictory',
+            equivalent_to_the_same_vertex_or_edge, info_1, info_2
+        )
 
-        # simple comparison, modulo comparison -------------------------------
-        status = basic_solution(equation)
-        if status != 'unknown':
-            return status
+        trivial = Validator('equivalent', equation_true, equation)
 
-        # split into cases and compare each ----------------------------------
-        statuses = []
-        for k_form in case['k_forms']:
-            equation = LinearRelation(
-                formula_1.substitute(k=k_form),
-                formula_2.substitute(k=k_form),
-                relation='=='
-            )
+        modulos = [Validator('implied', equation_true, equation.modulo(m))
+                   for m in [2, 3]]
 
-            status = basic_solution(equation)
+        bounds = Validator('implied', bounds_dont_contradict, info_1, info_2)
 
-            if status == 'true':
-                # nothing else needed
-                return status
+        # run the validators -------------------------------------------------
+        result = validate(the_same_number, trivial, *modulos, bounds)
 
-            statuses.append(status)
+        # decide what to do with the result ----------------------------------
+        if result == 'true':
+            return result
 
-        if set(statuses) == {'false'}:
-            # only if every case was false, we can say that the equation is
-            # false
-            return 'false'
+        results.append(result)
 
-        # check if the equation doesn't contradict the fact that
-        # 1 <= 'index' <= 'length' or that 0 <= 'k' --------------------------
-        status = check_inequalities(info_1, info_2, n=case['n'])
+    if 'true' in results:
+        return 'true'
 
-        if status == 'false':
-            # <status> == 'true' doesn't tell us anything, 'unknown' also
-            return status
+    elif set(results) == {'false'}:
+        return 'false'
 
     else:
-
-        # split into cases and compare each ----------------------------------
-        statuses = []
-        for k_form in case['k_forms']:
-
-            info_1 = get_data(name_1, case, ntuple_index='p', k=k_form)
-            info_2 = get_data(name_2, case, ntuple_index='q', k=k_form)
-
-            formula_1 = info_1['formula'].substitute()
-            formula_2 = info_2['formula'].substitute()
-
-            equation = LinearRelation(formula_1, formula_2, relation='==')
-            equation.solve(inplace=True)
-
-            # simple comparison, modulo comparison ---------------------------
-            status = basic_solution(equation)
-            if status == 'true':
-                # nothing else needed
-                return status
-
-            if status == 'false':
-                # no need to check the inequalities
-                statuses.append(status)
-                continue
-
-            # check if the equation doesn't contradict the fact that
-            # 1 <= 'index' <= 'length' or that 0 <= 'k' ----------------------
-            status = check_inequalities(
-                info_1, info_2, n=case['n'], fund_var='t')
-
-            if status == 'true':
-                # nothing else needed
-                return status
-
-            statuses.append(status)
-
-        if set(statuses) == {'false'}:
-            # only if every case was false, we can say that the equation is
-            # false
-            return 'false'
-
-    # if all code above fails, return the default ----------------------------
-    return 'unknown'
+        return 'unknown'
