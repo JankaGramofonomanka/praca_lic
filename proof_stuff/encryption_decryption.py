@@ -1,7 +1,5 @@
-from numbering_patterns.numbering_patterns.source.linear_formula import \
-    LinearFormula
-from numbering_patterns.numbering_patterns.source.linear_relation import \
-    LinearRelation
+from numbering_patterns import LinearFormula
+from numbering_patterns import LinearRelation
 from proof_stuff.misc import get_common_edge
 
 

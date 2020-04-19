@@ -1,5 +1,5 @@
-from numbering_patterns.numbering_patterns.source.ntr_sequence import NTermRecursionSequence
-from numbering_patterns.numbering_patterns.source.cv_numbering import CentralVertexNumbering
+from numbering_patterns import NTermRecursionSequence
+from numbering_patterns import CentralVertexNumbering
 
 
 A_l = NTermRecursionSequence('6i+1', '6i+4', '2n-14-12i')

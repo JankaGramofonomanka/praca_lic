@@ -1,11 +1,8 @@
 import unittest
 
-from numbering_patterns.numbering_patterns.source.linear_formula import \
-    LinearFormula
-from numbering_patterns.numbering_patterns.source.ntr_sequence import \
-    NTermRecursionSequence
-from numbering_patterns.numbering_patterns.source.cv_numbering import \
-    CentralVertexNumbering
+from numbering_patterns import LinearFormula
+from numbering_patterns import NTermRecursionSequence
+from numbering_patterns import CentralVertexNumbering
 
 from proof_stuff.encryption_decryption import get_data
 from proof_stuff.validator import Validator
