@@ -1,5 +1,6 @@
 
 from numbering_patterns import LinearRelation
+from numbering_patterns import LinearFormula
 
 from proof_stuff.encryption_decryption import get_data
 from proof_helpers import Validator, validate
@@ -134,3 +135,51 @@ def compare(name_1, name_2, case, k_form):
     status, reason = validate(the_same_number, trivial, *modulos, bounds)
 
     return status, reason
+
+def in_target_set(name, case, k_form):
+
+    absolute_upper_bound = LinearFormula(case['n']).substitute(k=k_form)
+    absolute_lower_bound = 1
+
+    info = get_data(name, case, k_form, ntuple_index='i')
+    formula = info['formula']
+
+    if 'bound' in info.keys():
+        lower_bound, upper_bound = formula.get_bounds(
+            lower_bounds={'i': 0},
+            upper_bounds={'i': info['bound']},
+        )
+
+    else:
+        lower_bound = formula.copy()
+        upper_bound = formula.copy()
+
+    lower_bound, _ = lower_bound.get_bounds(lower_bounds={'t': 0})
+
+    rel_1 = LinearRelation(absolute_lower_bound, lower_bound, relation='<=')
+    rel_2 = LinearRelation(upper_bound, absolute_upper_bound, relation='<=')
+
+    status_1 = rel_1.status()
+    status_2 = rel_2.status()
+
+    if 'bound' in info.keys():
+        print(formula, f"i <= {info['bound']}")
+    else:
+        print(formula)
+    print(rel_1)
+    print(rel_2)
+    print()
+
+    if status_1 == status_2 == 'true':
+        return 'true'
+
+    elif status_1 == 'false' or status_2 == 'false':
+        return 'false'
+
+    else:
+        return 'unknown'
+
+
+
+
+
