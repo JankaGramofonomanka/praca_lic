@@ -2,7 +2,7 @@
 from numbering_patterns import LinearRelation
 
 from proof_stuff.encryption_decryption import get_data
-from proof_stuff.validator import Validator, validate
+from proof_helpers import Validator, validate
 
 def equation_true(equation):
     """Says if <equation> is true"""

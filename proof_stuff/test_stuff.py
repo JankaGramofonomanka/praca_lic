@@ -5,8 +5,6 @@ from numbering_patterns import NTermRecursionSequence
 from numbering_patterns import CentralVertexNumbering
 
 from proof_stuff.encryption_decryption import get_data
-from proof_stuff.validator import Validator
-
 
 class TestStuff(unittest.TestCase):
 
@@ -69,45 +67,6 @@ class TestStuff(unittest.TestCase):
         info = get_data('emrr', case, 'k')
         self.assertEqual(info['formula'], LinearFormula('10k+5'))
 
-    def test_rsv(self):
-
-        test_data = [
-            # statement     <==>        thesis
-            ('true',    'equivalent',   'true'),
-            ('unknown', 'equivalent',   'unknown'),
-            ('false',   'equivalent',   'false'),
-
-            # statement     <==>    !thesis
-            ('true',    'opposite', 'false'),
-            ('unknown', 'opposite', 'unknown'),
-            ('false',   'opposite', 'true'),
-
-            # statement     ==>     thesis
-            ('true',    'implying', 'true'),
-            ('unknown', 'implying', 'unknown'),
-            ('false',   'implying', 'unknown'),
-
-            # statement     <==     thesis
-            ('true',    'implied',  'unknown'),
-            ('unknown', 'implied',  'unknown'),
-            ('false',   'implied',  'false'),
-
-            #    statement      ==>         !thesis
-            # or !statement     <==         thesis
-            ('true',    'contradictory',    'false'),
-            ('unknown', 'contradictory',    'unknown'),
-            ('false',   'contradictory',    'unknown'),
-        ]
-
-        def func(status):
-            return status
-
-        for info in test_data:
-
-            validator = Validator(info[1], func, info[0])
-
-            self.assertEqual(validator.process_status(info[0]), info[2])
-            self.assertEqual(validator.status(), info[2])
 
 
 
