@@ -104,61 +104,33 @@ def bounds_dont_contradict(info_1, info_2):
     return 'unknown'
 
 
-def compare(name_1, name_2, case):
+def compare(name_1, name_2, case, k_form):
 
-    results = []
-    reasons = []
-    for k_form in case['k_forms']:
+    # set up data ------------------------------------------------------------
+    info_1 = get_data(name_1, case, k_form, ntuple_index='p')
+    info_2 = get_data(name_2, case, k_form, ntuple_index='q')
 
-        # set up data --------------------------------------------------------
-        info_1 = get_data(name_1, case, k_form, ntuple_index='p')
-        info_2 = get_data(name_2, case, k_form, ntuple_index='q')
+    formula_1 = info_1['formula']
+    formula_2 = info_2['formula']
 
-        formula_1 = info_1['formula']
-        formula_2 = info_2['formula']
+    equation = LinearRelation(formula_1, formula_2, relation='==')
+    equation.solve(inplace=True)
 
-        equation = LinearRelation(formula_1, formula_2, relation='==')
-        equation.solve(inplace=True)
+    # set up validators ------------------------------------------------------
+    the_same_number = Validator('contradictory',
+        equivalent_to_the_same_vertex_or_edge, info_1, info_2
+    )
 
-        # set up validators --------------------------------------------------
-        the_same_number = Validator('contradictory',
-            equivalent_to_the_same_vertex_or_edge, info_1, info_2
-        )
+    trivial = Validator('equivalent', equation_true, equation)
 
-        trivial = Validator('equivalent', equation_true, equation)
+    modulos = [
+        Validator('implied', equation_true, equation.modulo(m), f"modulo {m}")
+        for m in [2, 3]
+    ]
 
-        modulos = [
-            Validator(
-                'implied', equation_true, equation.modulo(m), f"modulo {m}")
-            for m in [2, 3]
-        ]
+    bounds = Validator('implied', bounds_dont_contradict, info_1, info_2)
 
-        bounds = Validator('implied', bounds_dont_contradict, info_1, info_2)
+    # run the validators -----------------------------------------------------
+    status, reason = validate(the_same_number, trivial, *modulos, bounds)
 
-        # run the validators -------------------------------------------------
-        status, reason = validate(
-            the_same_number, trivial, *modulos, bounds)
-
-        reason = f"case k == {k_form}: " + reason
-
-        # decide what to do with the result ----------------------------------
-        if status == 'true':
-            return status, reason
-
-        results.append(status)
-        reasons.append(reason)
-
-    for i in range(len(results)):
-        if results[i] == 'true':
-            return 'true', reasons[i]
-
-    if set(results) == {'false'}:
-        reasons_combined = ""
-        for reason in reasons[:-1]:
-            reasons_combined += f'{reason}, '
-        reasons_combined += reasons[-1]
-
-        return 'false', reasons_combined
-
-    else:
-        return 'unknown', "no info"
+    return status, reason

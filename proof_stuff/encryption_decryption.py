@@ -156,9 +156,9 @@ def print_equation(name_1, name_2, case, no_spaces=0):
             equation = LinearRelation(formula_1, formula_2, relation='==')
 
             if i == 0:
-                print(f"{no_spaces*' '}{equation}")
+                print(f"{no_spaces*' '}{equation} (case k == {k_form})")
             else:
-                print(f"{no_spaces*' '}or {equation}")
+                print(f"{no_spaces*' '}or {equation} (case k == {k_form})")
 
 
 
