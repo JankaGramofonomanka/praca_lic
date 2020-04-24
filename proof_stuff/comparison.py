@@ -4,9 +4,13 @@ from numbering_patterns import LinearRelation
 from proof_stuff.encryption_decryption import get_data
 from proof_helpers import Validator, validate
 
-def equation_true(equation):
+def equation_true(equation, custom_info=None):
     """Says if <equation> is true"""
-    return equation.status()
+
+    if custom_info is None:
+        custom_info = "trivial solution"
+
+    return equation.status(), custom_info
 
 def equivalent_to_the_same_vertex_or_edge(info_1, info_2):
     """Returns 'true' if the equation is equivalent to the fact that the
@@ -15,7 +19,7 @@ def equivalent_to_the_same_vertex_or_edge(info_1, info_2):
     if info_1['name'] != info_2['name']:
         # the vertices / edges cannot be the same if the names are not the
         # same
-        return 'false'
+        return 'false', "names different"
 
     try:
         # if the 3-rd (counting from 0) character of the name is a number,
@@ -28,7 +32,7 @@ def equivalent_to_the_same_vertex_or_edge(info_1, info_2):
         # the names are the same and they don't refer to formulas from any of
         # the recursive sequences, therefore they appear only once in the
         # pattern
-        return 'true'
+        return 'true', "names the same, appear only once"
 
     equation_1 = LinearRelation(
         info_1['formula'], info_2['formula'], relation='==')
@@ -36,9 +40,9 @@ def equivalent_to_the_same_vertex_or_edge(info_1, info_2):
         info_1['ntuple_index'], info_2['ntuple_index'], relation='==')
 
     if equation_1.equivalent(equation_2):
-        return 'true'
+        return 'true', f"names the same, only true if the same vertex / edge"
     else:
-        return 'false'
+        return 'false', "can be true for different vertices / edges"
 
 
 def bounds_dont_contradict(info_1, info_2):
@@ -73,7 +77,7 @@ def bounds_dont_contradict(info_1, info_2):
 
     if rel_1.status() == 'false' or rel_2.status() == 'false':
         # 'status' == 'true' doesn't tell us anything, 'unknown' also
-        return 'false'
+        return 'false', "true only outside the limits"
 
     # use the fact that 't' >= 0 ---------------------------------------------
     less_than_zero, _ = less_than_zero.get_bounds(lower_bounds={'t': 2})
@@ -84,7 +88,7 @@ def bounds_dont_contradict(info_1, info_2):
 
     if rel_1.status() == 'false' or rel_2.status() == 'false':
         # 'status' == 'true' doesn't tell us anything, 'unknown' also
-        return 'false'
+        return 'false', "can't be true for t >= 2"
 
     print(f"{info_1['name']} == {info_2['name']} <==> {equation}")
     print(f"==> {rel_1.solve()}")
@@ -103,6 +107,7 @@ def bounds_dont_contradict(info_1, info_2):
 def compare(name_1, name_2, case):
 
     results = []
+    reasons = []
     for k_form in case['k_forms']:
 
         # set up data --------------------------------------------------------
@@ -122,25 +127,38 @@ def compare(name_1, name_2, case):
 
         trivial = Validator('equivalent', equation_true, equation)
 
-        modulos = [Validator('implied', equation_true, equation.modulo(m))
-                   for m in [2, 3]]
+        modulos = [
+            Validator(
+                'implied', equation_true, equation.modulo(m), f"modulo {m}")
+            for m in [2, 3]
+        ]
 
         bounds = Validator('implied', bounds_dont_contradict, info_1, info_2)
 
         # run the validators -------------------------------------------------
-        result = validate(the_same_number, trivial, *modulos, bounds)
+        status, reason = validate(
+            the_same_number, trivial, *modulos, bounds)
+
+        reason = f"case k == {k_form}: " + reason
 
         # decide what to do with the result ----------------------------------
-        if result == 'true':
-            return result
+        if status == 'true':
+            return status, reason
 
-        results.append(result)
+        results.append(status)
+        reasons.append(reason)
 
-    if 'true' in results:
-        return 'true'
+    for i in range(len(results)):
+        if results[i] == 'true':
+            return 'true', reasons[i]
 
-    elif set(results) == {'false'}:
-        return 'false'
+    if set(results) == {'false'}:
+        reasons_combined = ""
+        for reason in reasons[:-1]:
+            reasons_combined += f'{reason}, '
+        reasons_combined += reasons[-1]
+
+        return 'false', reasons_combined
 
     else:
-        return 'unknown'
+        return 'unknown', "no info"

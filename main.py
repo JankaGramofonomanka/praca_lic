@@ -56,7 +56,8 @@ for case in cases[:]:
                 # only one vertex/edge has this formula assigned
                 continue
 
-            status = compare(name_1, name_2, case)
+            status, info = compare(name_1, name_2, case)
+            print(info)
             if status == 'true':
                 truths += 1
                 print(f'{name_1} == {name_2} - TRUE!!!!!!!!!!!!!!!!!!!!!')
