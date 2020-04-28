@@ -80,9 +80,9 @@ def bounds_dont_contradict(info_1, info_2):
         # 'status' == 'true' doesn't tell us anything, 'unknown' also
         return 'false', "true only outside the limits"
 
-    # use the fact that 't' >= 0 ---------------------------------------------
-    less_than_zero, _ = less_than_zero.get_bounds(lower_bounds={'t': 2})
-    _, more_than_zero = more_than_zero.get_bounds(lower_bounds={'t': 2})
+    # use the fact that 't' >= 1 ---------------------------------------------
+    less_than_zero, _ = less_than_zero.get_bounds(lower_bounds={'t': 1})
+    _, more_than_zero = more_than_zero.get_bounds(lower_bounds={'t': 1})
 
     rel_1 = LinearRelation(less_than_zero, 0, relation='<=')
     rel_2 = LinearRelation(more_than_zero, 0, relation='>=')
@@ -138,37 +138,35 @@ def compare(name_1, name_2, case, k_form):
 
 def in_target_set(name, case, k_form):
 
-    absolute_upper_bound = LinearFormula(case['n']).substitute(k=k_form)
-    absolute_lower_bound = 1
-
+    n = LinearFormula(case['n']).substitute(k=k_form)
     info = get_data(name, case, k_form, ntuple_index='i')
     formula = info['formula']
 
-    if 'bound' in info.keys():
-        lower_bound, upper_bound = formula.get_bounds(
-            lower_bounds={'i': 0},
-            upper_bounds={'i': info['bound']},
+    more_than_zero_list = [formula - 1, 2*n - formula]
+    relations = [None, None]
+
+    for i in range(2):
+        more_than_zero = more_than_zero_list[i].zip()
+
+        try:
+            more_than_zero, _ = more_than_zero.get_bounds(
+                lower_bounds={'i': 0},
+                upper_bounds={'i': info['bound']},
+            )
+            more_than_zero.zip(inplace=True)
+        except KeyError:
+            pass
+
+        more_than_zero, _ = more_than_zero.get_bounds(
+            lower_bounds={'t': 1},
         )
+        more_than_zero.zip(inplace=True)
+        rel = LinearRelation(0, more_than_zero.copy(), relation='<=')
+        rel.solve(inplace=True)
+        relations[i] = rel
 
-    else:
-        lower_bound = formula.copy()
-        upper_bound = formula.copy()
-
-    lower_bound, _ = lower_bound.get_bounds(lower_bounds={'t': 0})
-
-    rel_1 = LinearRelation(absolute_lower_bound, lower_bound, relation='<=')
-    rel_2 = LinearRelation(upper_bound, absolute_upper_bound, relation='<=')
-
-    status_1 = rel_1.status()
-    status_2 = rel_2.status()
-
-    if 'bound' in info.keys():
-        print(formula, f"i <= {info['bound']}")
-    else:
-        print(formula)
-    print(rel_1)
-    print(rel_2)
-    print()
+    status_1 = relations[0].status()
+    status_2 = relations[1].status()
 
     if status_1 == status_2 == 'true':
         return 'true'
@@ -177,7 +175,17 @@ def in_target_set(name, case, k_form):
         return 'false'
 
     else:
+
+        if 'bound' in info.keys():
+            print(formula, f"i <= {info['bound']}")
+        else:
+            print(formula)
+        print(rel_1)
+        print(rel_2)
+        print()
+
         return 'unknown'
+
 
 
 
