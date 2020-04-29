@@ -1,6 +1,6 @@
-from numbering_patterns import LinearFormula
+
 from numbering_patterns import LinearRelation
-from proof_stuff.misc import get_common_edge
+from .misc import get_common_edge
 
 
 def get_names(case):

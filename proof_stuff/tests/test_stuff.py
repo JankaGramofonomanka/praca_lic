@@ -4,7 +4,7 @@ from numbering_patterns import LinearFormula
 from numbering_patterns import NTermRecursionSequence
 from numbering_patterns import CentralVertexNumbering
 
-from proof_stuff.encryption_decryption import get_data
+from ..source.encryption_decryption import get_data
 
 class TestStuff(unittest.TestCase):
 
