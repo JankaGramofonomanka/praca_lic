@@ -70,7 +70,7 @@ def bounds_dont_contradict(info_1, info_2):
 
     if rel_1.status() == 'false' or rel_2.status() == 'false':
         # 'status' == 'true' doesn't tell us anything, 'unknown' also
-        return 'false', "can't be true for t >= 2"
+        return 'false', "can't be true for t >= 1"
 
     # if all code above fails, return the default ----------------------------
     return 'unknown'
