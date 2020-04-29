@@ -31,3 +31,24 @@ def get_formula_with_index(formula, index, index_var):
     result.zip(inplace=True)
 
     return result
+
+
+def get_variable_bounds(*infos):
+    upper_bounds = {}
+    lower_bounds = {'t': 1}
+    order = []
+
+    for info in infos:
+        if 'bound' in info.keys():
+            upper_bounds[info['ntuple_index']] = info['bound']
+            lower_bounds[info['ntuple_index']] = 0
+            order.append(info['ntuple_index'])
+
+    order.append('t')
+
+    return lower_bounds, upper_bounds, order
+
+
+
+
+
