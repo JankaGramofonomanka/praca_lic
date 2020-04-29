@@ -38,7 +38,7 @@ case_c = {
 case_d = {
     'n': '6k',
     'upper': A.set_lengths('2k', '2k-1'),
-    'lower': C.reverse().set_lengths('k', 'k-1'),
+    'lower': C.set_lengths('k', 'k-1'),
     'k_forms': ['3t+1', '3t+2']
 }
 
