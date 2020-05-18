@@ -1,3 +1,6 @@
 [submodule "numbering_patterns"]
 	path = numbering_patterns
 	url = https://github.com/JankaGramofonomanka/numbering_patterns.git
+[submodule "proof_helpers"]
+	path = proof_helpers
+	url = https://github.com/JankaGramofonomanka/proof_helpers.git
